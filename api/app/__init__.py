@@ -2,8 +2,14 @@ from flask import Flask
 from flask_login import LoginManager
 from mongomodels import MongoClient
 
+from dotenv import dotenv_values
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+config = dotenv_values(BASE_DIR/ ".env")
+
 mongodb = None
-uri = "mongodb+srv://draths:Bremen92@cluster0.95mle.mongodb.net/?retryWrites=true&w=majority"
+uri = config['MONGO_DB_URI']
 db_name = "Trader"
 coll_name = "BankingInfo"
 

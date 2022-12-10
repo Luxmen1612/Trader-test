@@ -4,7 +4,7 @@ import pandas as pd
 from dotenv import dotenv_values
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 config = dotenv_values(BASE_DIR/ ".env")
 
 paper_trade_key = config['PAPER_TRADE_KEY']

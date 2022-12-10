@@ -14,17 +14,17 @@ def get_year(series): #transform series index to year value
     series.index = pd.Series(lst)
     return series
 
-def yield_calc(symbol, year):
+def yield_calc(symbol, frequency = "Q"):
 
     ticker = yf.Ticker(symbol)
-    price = get_year(yf.download(symbol).Close.resample('Y').last())
-    dividends = ticker.dividends.resample('Y').sum()
-    dividends = get_year(dividends)
+    dividends = ticker.dividends.resample(frequency).sum()
+    price = yf.download(symbol).Close.resample(frequency).last()[dividends.index.values[0]:]
+    #dividends = get_year(dividends)
 
-    div_yield = dividends[year] / price[year]
+    div_yield = dividends / price
+    index = div_yield.index.values
 
-    if div_yield > 0.1:
-        div_yield = 0.
+    div_yield = pd.Series(np.where(div_yield>0.1,0, div_yield), index=index)
 
     return div_yield
 
@@ -34,19 +34,12 @@ def rolling_vol(symbol, window):
 
     return vol
 
-def get_momentum(symbol, year):
+#def get_momentum(symbol, frequency = "Q"):
 
-    prior_year = year - np.timedelta64(365, 'D')
+#    data = get_data(symbol).resample(frequency).last
+#    ret = (data / data.shift(-1)).dropna()
 
-    if str(prior_year)[9] != '1':
-        prior_year = prior_year + np.timedelta64(1, 'D')
-    elif str(prior_year)[8] == '0':
-        prior_year = prior_year - np.timedelta64(1, 'D')
-
-    data = yf.download(symbol).Close.resample('Y').last()
-    ret = (data[year] / data[prior_year]) - 1
-
-    return ret
+#    return ret
 
 def get_price(symbol, year):
 
@@ -57,7 +50,10 @@ def get_price(symbol, year):
 
 if __name__ == '__main__':
 
-    symbols = ['BATS.L', '^GSPC', 'BATS.L', '^GSPC', 'BATS.L', '^GSPC', 'BATS.L', '^GSPC', 'BATS.L', '^GSPC', 'BATS.L', '^GSPC',]
-    b = get_momentum(symbols)
+    #symbols = ['BATS.L', '^GSPC', 'BATS.L', '^GSPC', 'BATS.L', '^GSPC', 'BATS.L', '^GSPC', 'BATS.L', '^GSPC', 'BATS.L', '^GSPC',]
+    #b = get_momentum(symbols)
+    symbol = "AAPL"
+    get_momentum(symbol)
+    #yield_calc(symbol)
 
 

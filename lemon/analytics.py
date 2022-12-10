@@ -17,3 +17,18 @@ def get_stocks():
     data = requests.get(endpoint, headers=headers).json()
 
     return data
+
+def get_stock_by_isin(isin):
+
+    endpoint = f"https://data.lemon.markets/v1/instruments?isin={isin}"
+
+    data = requests.get(endpoint, headers=headers).json()
+
+    return data
+
+def compare_inverse(factor, isin, reference_ticker):
+
+    stock_data = get_stock_by_isin(isin)
+    reference_data = yf.download(tickers=reference_ticker).Close.pct_change().dropna()
+
+    #Find way to compare dates
