@@ -31,7 +31,7 @@ def athome_scrpr():
     today = dt.datetime.today()
     page_size = 20
 
-    uris = ["https://www.athome.lu/srp/?tr=buy&q=bb769e8c&loc=L4-nord&ptypes=house", "https://www.athome.lu/srp/?tr=buy&q=6cbd09fa&ptypes=house"]
+    uris = ["https://www.athome.lu/srp/?tr=buy&q=bb769e8c&loc=L4-nord&ptypes=house", "https://www.athome.lu/srp/?tr=buy&q=6cbd09fa&ptypes=house", "https://www.athome.lu/srp/?tr=buy&q=faee1a4a&ptypes=house"]
     #base_uri = "https://www.athome.lu/srp/?tr=buy&q=6cbd09fa&ptypes=house"
 
     for u in uris:
@@ -41,8 +41,10 @@ def athome_scrpr():
         base_uri = u
         if "L4" in base_uri:
             coll = "NORD"
-        else:
+        elif "6cbd09fa" in base_uri:
             coll = "WILTZ"
+        else:
+            coll = "Luxembourg"
 
         results = get_content(base_uri)[0]
         findings = get_content(base_uri)[1]
@@ -89,5 +91,5 @@ def build_index(coll):
 
 if __name__ == '__main__':
 
-    athome_scrpr()
+    #athome_scrpr()
     build_index(coll = "WILTZ")

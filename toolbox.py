@@ -75,6 +75,23 @@ def create_market_portfolio(data):
 
     return nav_data
 
+def retention_rate(data, date, previous_date):
+
+    old_ptf = data.get(previous_date).get("data").keys()
+    new_ptf = data.get(date).get("data").keys()
+
+    retention = len(list(set(old_ptf) & set(new_ptf))) / len(old_ptf)
+
+    return retention
+
+def _Brownian(N, T=1, seed = np.random.randint(10**9)):
+    np.random.seed(seed)
+    dt = T / N  # time step
+    b = np.random.normal(0., 1., int(N)) * np.sqrt(dt)  # brownian increments
+    W = np.cumsum(b)  # brownian path
+    return W, b
+
+
 if __name__ == '__main__':
 
     #symbols = ['BATS.L', '^GSPC', 'BATS.L', '^GSPC', 'BATS.L', '^GSPC', 'BATS.L', '^GSPC', 'BATS.L', '^GSPC', 'BATS.L', '^GSPC',]

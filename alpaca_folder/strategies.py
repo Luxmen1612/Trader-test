@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import datetime as dt
 
 from alpaca_folder.alpaca import get_assets, get_data
-from toolbox import yield_calc, create_market_portfolio, tail_analytics
+from toolbox import yield_calc, create_market_portfolio, tail_analytics, retention_rate
 import mongomodels
 from pathlib import Path
 from dotenv import dotenv_values
@@ -27,6 +27,9 @@ asset_list = get_assets(asset_class="us_equity")
 symbol_list = pd.read_excel(BASE_DIR/"test.xlsx", engine = "openpyxl")[0]
 nsdq_tickers = pd.read_excel(BASE_DIR/"NSDQ.xlsx", engine = "openpyxl", header = None)[0]
 nsdq_10_tickers = ["AAPL", "MSFT", "AMZN", "GOOG", "NVDA", "TSLA", "PEP", "COST", "META"]
+
+def calc_nav():
+    pass
 
 def regression(dependent, independent, lag):
 
@@ -105,8 +108,8 @@ def create_allocation(master_df, div_df, mom_df, n):
     df_slice_div = div_df.loc[n]
     df_slice_mom = mom_df.loc[n]
 
-    ref_div_yield = np.percentile(df_slice_div, 99)
-    ref_mom = np.percentile(df_slice_mom, 99)
+    ref_div_yield = np.percentile(df_slice_div, 50)
+    ref_mom = np.percentile(df_slice_mom, 50)
 
     long_div = df_slice_div[df_slice_div > ref_div_yield].dropna().index.values
     mom_df = df_slice_mom[df_slice_mom > ref_mom].dropna().index.values
@@ -118,7 +121,7 @@ def create_allocation(master_df, div_df, mom_df, n):
             ##price = get_data(symbol).resample("Q").last()[n]
             price = master_df[symbol][n]
             position = weight / price
-            long_portfolio[symbol] = (-position, price)
+            long_portfolio[symbol] = (position, price)
 
         except:
             pass
@@ -152,6 +155,8 @@ class portfolio_backtesting:
         self.momentum_var = {}
         self.market_kurtosis = {}
         self.market_var = {}
+        self.divyield_retention = {}
+        self.momentum_retention = {}
 
         self.base_df = momentum_calibrate(self.prices_df)
         self.div_df = div_calibrate(self.prices_df)
@@ -203,7 +208,7 @@ class portfolio_backtesting:
             self.market_kurtosis[k] = tail_data[0]
             self.market_var[k] = tail_data[1]
 
-
+        self.divyield_retention[k] = retention_rate(long, k, previous_date)
         for i in long.get(previous_date).get("data").keys():
             prices = self.prices_df[i]
             latest_price = prices[k]
@@ -216,7 +221,7 @@ class portfolio_backtesting:
             ret = latest_price / initial_price
             long_yields.append(ret)
 
-
+        self.momentum_retention[k] = retention_rate(short, k, previous_date)
         for y in short.get(previous_date).get("data").keys():
             prices = self.prices_df[y]
             latest_price = prices[k]
@@ -287,6 +292,29 @@ class portfolio_backtesting:
         }
 
         pymongo.MongoClient(mongo_uri)[db][coll].insert_one(Portfolio)
+
+    def get_latest_performance(self, bm = "^GSPC"):
+
+        prices = self.prices_df_nonsampled
+        long_ret = {}
+        short_ret = {}
+        _oldnav = 0
+        _newnav = 0
+        _data = pymongo.MongoClient(mongo_uri)[db][coll].find().sort("id", -1).limit(1)
+
+        for x in _data:
+            for k in x["long"].keys():
+                _oldnav += np.abs(x["long"][k][1] * x["long"][k][0])
+                _newnav += np.abs(prices[k].iloc[-1] * x["long"][k][0])
+                long_ret[k] = prices[k].iloc[-1] / x["long"][k][1] -1
+
+        for w in _data:
+            for v in w["short"].keys():
+                _oldnav += w["short"][v][1] * w["short"][v][0]
+                _newnav += prices[v].iloc[-1] * w["short"][v][0]
+                short_ret[v] = prices[v].iloc[-1] / w["short"][v][1] -1
+
+        return long_ret, short_ret, _oldnav, _newnav
 
 def assess_return_out_sample():
     pass
@@ -377,7 +405,8 @@ if __name__ == '__main__':
     #country_ref()
 
     x = portfolio_backtesting()
-    x.run()
-    x.get_spread()
-    x.stats()
-    x.out_of_sample()
+    x.get_latest_performance()
+    #x.run()
+    #x.get_spread()
+    #x.stats()
+    #x.out_of_sample()
