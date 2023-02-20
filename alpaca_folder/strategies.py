@@ -196,13 +196,11 @@ class portfolio_backtesting:
             self.market_kurtosis[k] = tail_data[0]
             self.market_var[k] = tail_data[1]
 
-
         else:
             previous_date = self.reference_dates[np.where(self.reference_dates == k)[0]-1][0]
             tail_data = tail_analytics(self.market_portfolio[previous_date:k])
             self.market_kurtosis[k] = tail_data[0]
             self.market_var[k] = tail_data[1]
-
 
         for i in long.get(previous_date).get("data").keys():
             prices = self.prices_df[i]
