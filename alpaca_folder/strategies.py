@@ -48,7 +48,7 @@ def construct_master_price_files(frequency = "Q"):
 
     df = pd.DataFrame(index = pd.to_datetime([]))
     df_nonsampled = pd.DataFrame(index = pd.to_datetime([]))
-    for k in pd.Series(symbol_list.unique()):
+    for k in pd.Series(symbol_list.unique()[:10]):
         data_nonsampled = get_data(k).tz_localize(None)
         data_nonsampled.name = k
         data = data_nonsampled.resample(frequency).last()
@@ -69,12 +69,12 @@ def get_momentum(df, symbol, frequency = "Q"):
 
 def div_calibrate(df):
 
-    global_df = pd.DataFrame()
+    global_df = pd.DataFrame(index = pd.to_datetime([]))
 
     #for k in symbol_list[:1000]:
     for k in df.columns:
         try:
-            div_yield = yield_calc(k, frequency = "Q")
+            div_yield = yield_calc(k, frequency = "Q").tz_localize(None)
             div_yield.name = k
             global_df = pd.concat([global_df, div_yield], axis = 1)
 
@@ -82,6 +82,7 @@ def div_calibrate(df):
             pass
 
     return global_df.fillna(0)
+
 
 def momentum_calibrate(df): #works but performance speed issues might want to try concat
 
@@ -95,6 +96,7 @@ def momentum_calibrate(df): #works but performance speed issues might want to tr
             pass
 
     return global_df.fillna(0)
+
 
 def create_allocation(master_df, div_df, mom_df, n):
 
@@ -157,6 +159,7 @@ class portfolio_backtesting:
         self.market_var = {}
         self.divyield_retention = {}
         self.momentum_retention = {}
+        self.conversion_rate = {}
 
         self.base_df = momentum_calibrate(self.prices_df)
         self.div_df = div_calibrate(self.prices_df)
@@ -185,6 +188,7 @@ class portfolio_backtesting:
 
             self.master_long_portfolio[k] = long_portfolio
             self.master_short_portfolio[k] = short_portfolio
+            self.conversion_rate[k] = list(set(list(long_portfolio)).intersection(list(short_portfolio)))
 
             self.calc_return(k, self.master_long_portfolio, self.master_short_portfolio)
 

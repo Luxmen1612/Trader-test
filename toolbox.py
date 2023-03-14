@@ -22,7 +22,7 @@ def get_year(series): #transform series index to year value
 def yield_calc(symbol, frequency = "Q"):
 
     ticker = yf.Ticker(symbol)
-    dividends = ticker.dividends.resample(frequency).sum()
+    dividends = ticker.dividends.resample(frequency).sum().tz_localize(None)
     price = yf.download(symbol).Close.resample(frequency).last()[dividends.index.values[0]:]
     #dividends = get_year(dividends)
 
