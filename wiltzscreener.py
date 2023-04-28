@@ -92,4 +92,4 @@ def build_index(coll):
 if __name__ == '__main__':
 
     #athome_scrpr()
-    build_index(coll = "Luxembourg")
+    build_index(coll = "WILTZ")
