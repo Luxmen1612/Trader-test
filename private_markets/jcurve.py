@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 from dateutil.relativedelta import relativedelta
 #from frqpriips.analytics.priips.helpers import modelutils
-from private_markets import invest_models, draw_models, dist_models
+from private_markets import invest_models, draw_models, dist_models, private_debt_model
 import yfinance as yf
 from toolbox import _Brownian
 import matplotlib.pyplot as plt
@@ -56,55 +56,64 @@ def adjust_CF_for_fees(df, entry = None, exit = None, ongoing = 0.012, transacti
 
     return adj_df["P"]
 
-def set_params(df = 10, seed = 0, beta = 1, rhp = 1,  env = "stress"):
+def set_params(df = 10, seed = 0, beta = 1, rhp = 1,  env = "stress", strategy = "private_debt", capital = 10000.):
 
-    context_obj = Context(bm_data, strategy = "PE", rhp = rhp, benchmark_ric = "^GSPC", freq = "Q", rf_rate = 0. , comm_capital = 10000., seed = seed)
+    context_obj = Context(bm_data, strategy = strategy, rhp = rhp, benchmark_ric = "^GSPC", freq = "M", rf_rate = 0. , comm_capital = capital, seed = seed)
 
-    if env == "normal":
-        draw_obj = draw_models.Brownian(context_obj, draw_rate=0.1, draw_vol = 0.25, draw_corr = 0.5, seed = seed)
-        dist_obj = dist_models.Brownian(context_obj, dist_rate=0.02, dist_vol=0.05, dist_corr = 0.8, dist_start_pct_of_committed=0.5)
-        invest_obj = invest_models.PME_Buchner(context_obj, bm_data, alpha_vol=0.15, alpha_mu = 0.0, seed = seed, beta = beta, df = df)
+    if strategy != "private_debt":
 
+        if env == "normal":
+            draw_obj = draw_models.Brownian(context_obj, draw_rate=0.1/4, draw_vol = 0.25/4, draw_corr = 0.5, seed = seed)
+            dist_obj = dist_models.Brownian(context_obj, dist_rate=0.02/4, dist_vol=0.05/4, dist_corr = 0.8, dist_start_pct_of_committed=0.5)
+            invest_obj = invest_models.PME_Buchner(context_obj, bm_data, alpha_vol=0.15, alpha_mu = 0.0, seed = seed, beta = beta, df = df)
+
+        else:
+            draw_obj = draw_models.Brownian(context_obj, draw_rate=0.05/4, draw_vol=0.35/4, draw_corr=0.5, seed=seed)
+            dist_obj = dist_models.Brownian(context_obj, dist_rate=0.01/4, dist_vol=0.15/4, dist_corr=0.8,
+                                            dist_start_pct_of_committed=0.5)
+            invest_obj = invest_models.PME_Buchner(context_obj, bm_data, alpha_vol=0.25, alpha_mu=-0.01, seed=seed,
+                                                   beta=beta, df=df)
     else:
-        draw_obj = draw_models.Brownian(context_obj, draw_rate=0.05, draw_vol=0.35, draw_corr=0.5, seed=seed)
-        dist_obj = dist_models.Brownian(context_obj, dist_rate=0.01, dist_vol=0.15, dist_corr=0.8,
-                                        dist_start_pct_of_committed=0.5)
-        invest_obj = invest_models.PME_Buchner(context_obj, bm_data, alpha_vol=0.25, alpha_mu=-0.01, seed=seed,
-                                               beta=beta, df=df)
 
+        draw_obj = draw_models.Brownian(context_obj, draw_rate=0.1/4, draw_vol=0.25/4, draw_corr=0.5, seed=seed)
+        dist_obj = dist_models.Brownian(context_obj, dist_rate=0.02/4, dist_vol=0.05/4, dist_corr=0.8,
+                                        dist_start_pct_of_committed=0.5)
+        invest_obj = private_debt_model.Kupiec(context_obj, rate = 0.1/4, pod=0.2/4, eod=1.0, lgd= 0.5, seed=seed)
     simulation_obj = Simulation(context_obj, draw_obj, dist_obj, invest_obj)
 
     return simulation_obj
 
 class Calc:
-    def __init__(self, bm_data, target, strategy, rhp, env):
+    def __init__(self, bm_data, target, strategy, rhp, env, start, capital = 10000):
 
+        self.capital = capital
         self.env = env
         self.rhp = rhp
         self.benchmark_data = bm_data
-        self.context = Context(self.benchmark_data, strategy = strategy, rhp = 10, benchmark_ric = "^GSPC", freq = "Q", rf_rate = 0. , comm_capital = 10000., seed = None)
+        self.context = Context(self.benchmark_data, strategy = strategy, rhp = 10, benchmark_ric = "^GSPC", freq = "M", rf_rate = 0. , comm_capital = self.capital, seed = None, start = start)
         self.target_multiple = target
         self.beta = invest_models.PME_Buchner(self.context, self.benchmark_data, seed = 1).get_optimised_parameters(target)
 
         self.dict = {}
         self.navs = []
 
-        self.img_uri = "/home/david/Downloads/Logo PRIIPs Dark transparent.png"
-        logo = image.imread(self.img_uri)
-        fig, ax = plt.subplots()
-        #ax.imshow(logo)
-        ax.set_facecolor('#1d2426')
-        ax.set_title("J-curve simulation")
-        ax.figure.figimage(logo, 100, 350, alpha = 1, zorder = 1)
-        plt.pause(15)
+        #self.img_uri = "/home/david/Downloads/Logo PRIIPs Dark transparent.png"
+        #logo = image.imread(self.img_uri)
+        #fig, ax = plt.subplots()
+        #ax.set_facecolor('#1d2426')
+        #ax.set_title("J-curve simulation")
+        #ax.figure.figimage(logo, 100, 350, alpha = 1, zorder = 1)
+        #plt.pause(15)
 
-        for i in range(100):
+        for i in range(11):
             dict = self.simulate(10, i)
-            cost_adjusted_values = adjust_CF_for_fees(dict.copy(), 0, 0, 0.012,0, 0.2, 0.08)
-            plt.pause(0.15)
-            ax.plot(cost_adjusted_values)
+            #cost_adjusted_values = adjust_CF_for_fees(dict.copy(), 0, 0, 0.012,0, 0.2, 0.08)
+            #plt.pause(0.15)
+            #ax.plot(cost_adjusted_values)
             self.navs.append(dict["P"].iloc[-1])
             self.dict[i] = dict
+
+        test = 1
 
     def simulate(self, degrees_freedom, item):
 
@@ -113,7 +122,7 @@ class Calc:
             for seed in range(0, number_scenarios):
                 seed = item
                 print(f'running scenario {seed} for process {degrees_freedom}')
-                scenario_obj = set_params(seed = seed, beta = self.beta, rhp = self.rhp, env = self.env)
+                scenario_obj = set_params(seed = seed, beta = self.beta, rhp = self.rhp, env = self.env, capital=self.capital)
                 scenario_obj.simulate_path()
                 scenarios_dict = scenario_obj.results_df
 
@@ -124,14 +133,16 @@ class Calc:
 
 class Context:
 
-    def __init__(self, benchmark_data, strategy, rhp, benchmark_ric='.SPX', freq="Q", rf_rate=0., comm_capital=10000., seed=None, ):
+    def __init__(self, benchmark_data, strategy, rhp, benchmark_ric='.SPX', freq="M", rf_rate=0., comm_capital=10000., seed=None, start = None):
         self.rhp = rhp
+        self.start = start
         self.benchmark_ric = benchmark_data
-        self.start_dt = dt.date.today()
-        self.end_dt = self.start_dt + relativedelta(years=self.rhp)
+        self.start_dt = dt.date.today() if self.start is None else self.start
+        self.end_dt = self.start_dt + relativedelta(months =self.rhp * 12)
 
-        self.lookback_start = self.start_dt - relativedelta(years=self.rhp)
-        self.stamp = pd.date_range(freq=freq, start=self.lookback_start, end=self.start_dt)
+        #self.lookback_start = self.start_dt - relativedelta(years=self.rhp)
+        self.stamp = pd.date_range(freq=freq, start=self.start_dt
+                                   , end=self.end_dt)
 
         self.freq = freq
         self.npoints = len(self.stamp)
@@ -235,4 +246,4 @@ class Simulation:
 
 if __name__ == "__main__":
 
-    test = Calc(bm_data, target = 2.7, strategy = "PE", rhp = 10, env = "normal")
+    test = Calc(bm_data, target = 2.7, strategy = "private_debt", rhp = 10, env = "normal", start = None, capital=100000000)

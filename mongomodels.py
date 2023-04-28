@@ -7,11 +7,11 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent
 config = dotenv_values(BASE_DIR/ ".env")
 
-mongo_uri = config["MONGO_DB_URI"]
+#mongo_uri = config["MONGO_DB_URI"]
 
 class MongoClient:
 
-    def __init__(self, db_name, db_coll):
+    def __init__(self, mongo_uri, db_name, db_coll):
 
         self.uri = mongo_uri
         self.db_name = db_name
