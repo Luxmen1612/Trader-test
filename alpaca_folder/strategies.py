@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import datetime as dt
 
-from alpaca_folder.alpaca import get_assets, get_data
+from alpaca_folder.alpaca import get_assets, get_data, generate_ticket, order
 from toolbox import yield_calc, create_market_portfolio, tail_analytics, retention_rate
 import mongomodels
 from pathlib import Path
@@ -48,7 +48,7 @@ def construct_master_price_files(frequency = "Q"):
 
     df = pd.DataFrame(index = pd.to_datetime([]))
     df_nonsampled = pd.DataFrame(index = pd.to_datetime([]))
-    for k in pd.Series(symbol_list.unique()[:10]):
+    for k in pd.Series(symbol_list.unique()):
         data_nonsampled = get_data(k).tz_localize(None)
         data_nonsampled.name = k
         data = data_nonsampled.resample(frequency).last()
@@ -58,9 +58,9 @@ def construct_master_price_files(frequency = "Q"):
 
     return df.dropna(axis = 1), df_nonsampled.dropna(axis = 1)
 
+
 def get_momentum(df, symbol, frequency = "Q"):
 
-    #data = get_data(symbol).resample(frequency).last()
     data = df[symbol]
     ret = (data / data.shift(1)).dropna()
     ret.index = pd.to_datetime(ret.index)
@@ -69,12 +69,12 @@ def get_momentum(df, symbol, frequency = "Q"):
 
 def div_calibrate(df):
 
-    global_df = pd.DataFrame(index = pd.to_datetime([]))
+    global_df = pd.DataFrame()
 
     #for k in symbol_list[:1000]:
     for k in df.columns:
         try:
-            div_yield = yield_calc(k, frequency = "Q").tz_localize(None)
+            div_yield = yield_calc(k, frequency = "Q")
             div_yield.name = k
             global_df = pd.concat([global_df, div_yield], axis = 1)
 
@@ -82,7 +82,6 @@ def div_calibrate(df):
             pass
 
     return global_df.fillna(0)
-
 
 def momentum_calibrate(df): #works but performance speed issues might want to try concat
 
@@ -97,7 +96,6 @@ def momentum_calibrate(df): #works but performance speed issues might want to tr
 
     return global_df.fillna(0)
 
-
 def create_allocation(master_df, div_df, mom_df, n):
 
     portfolio = {}
@@ -110,17 +108,17 @@ def create_allocation(master_df, div_df, mom_df, n):
     df_slice_div = div_df.loc[n]
     df_slice_mom = mom_df.loc[n]
 
-    ref_div_yield = np.percentile(df_slice_div, 50)
-    ref_mom = np.percentile(df_slice_mom, 50)
+    ref_div_yield = np.percentile(df_slice_div, 75)
+    ref_mom = np.percentile(df_slice_mom, 75)
 
     long_div = df_slice_div[df_slice_div > ref_div_yield].dropna().index.values
+    average_yield = np.average(df_slice_div[df_slice_div > ref_div_yield])
     mom_df = df_slice_mom[df_slice_mom > ref_mom].dropna().index.values
 
     for symbol in long_div:
 
         try:
             weight = allocation / len(long_div)
-            ##price = get_data(symbol).resample("Q").last()[n]
             price = master_df[symbol][n]
             position = weight / price
             long_portfolio[symbol] = (position, price)
@@ -131,14 +129,13 @@ def create_allocation(master_df, div_df, mom_df, n):
     for symbol in mom_df:
         try:
             weight = allocation / len(mom_df)
-            # price = get_data(symbol).resample("Q").last()[n]
             price = master_df[symbol][n]
             position = weight / price
             short_portfolio[symbol] = (- position, price)
         except:
             pass
 
-    return long_portfolio, short_portfolio
+    return long_portfolio, short_portfolio, average_yield
 
 
 class portfolio_backtesting:
@@ -158,8 +155,9 @@ class portfolio_backtesting:
         self.market_kurtosis = {}
         self.market_var = {}
         self.divyield_retention = {}
+        self.divyield = {}
         self.momentum_retention = {}
-        self.conversion_rate = {}
+        self.conversion = {}
 
         self.base_df = momentum_calibrate(self.prices_df)
         self.div_df = div_calibrate(self.prices_df)
@@ -178,7 +176,8 @@ class portfolio_backtesting:
 
             long_portfolio = {
                 'direction': "long",
-                'data': result[0]
+                'data': result[0],
+                'yield': result[2]
             }
 
             short_portfolio = {
@@ -188,7 +187,8 @@ class portfolio_backtesting:
 
             self.master_long_portfolio[k] = long_portfolio
             self.master_short_portfolio[k] = short_portfolio
-            self.conversion_rate[k] = list(set(list(long_portfolio)).intersection(list(short_portfolio)))
+            self.divyield[k] = result[2]
+            self.conversion[k] = len(list(set(list(long_portfolio["data"])).intersection(list(short_portfolio["data"])))) / len(long_portfolio["data"])
 
             self.calc_return(k, self.master_long_portfolio, self.master_short_portfolio)
 
@@ -356,7 +356,7 @@ def nasdaq_top_10_ew_contribution():
     pd.Series(corr).dropna().plot()
     plt.show()
 
-def trade_top_10_nasdaq(leverage = 1):
+def trade_top_10_nasdaq_backtest(leverage = 2):
 
     df = pd.DataFrame()
     for k in nsdq_10_tickers:
@@ -372,7 +372,14 @@ def trade_top_10_nasdaq(leverage = 1):
         position = - (df.loc[k]) * leverage
         portfolio_value[k] = np.sum(position)
 
-    series = pd.Series(portfolio_value)
+    return pd.Series(portfolio_value)
+
+def trade_nsdq_top10(direction = "short"):
+
+    for k in nsdq_10_tickers:
+        ticket = generate_ticket(k, 1, direction)
+        order(ticket)
+
 
 
 def country_ref(country = "Italy"):
@@ -404,13 +411,13 @@ def country_ref(country = "Italy"):
 if __name__ == '__main__':
 
     #nasdaq_top_10_ew_contribution()
-    #df = trade_top_10_nasdaq(leverage = 1)
+    #df = trade_nsdq_top10(direction = "sell")
 
     #country_ref()
 
     x = portfolio_backtesting()
-    x.get_latest_performance()
-    #x.run()
+    #x.get_latest_performance()
+    x.run()
     #x.get_spread()
     #x.stats()
     #x.out_of_sample()

@@ -77,8 +77,8 @@ def create_market_portfolio(data):
 
 def retention_rate(data, date, previous_date):
 
-    old_ptf = data.get(previous_date).get("data").keys()
-    new_ptf = data.get(date).get("data").keys()
+    old_ptf = data.get(previous_date).get("long")
+    new_ptf = data.get(date).get("long")
 
     retention = len(list(set(old_ptf) & set(new_ptf))) / len(old_ptf)
 
@@ -91,6 +91,13 @@ def _Brownian(N, T=1, seed = np.random.randint(10**9)):
     W = np.cumsum(b)  # brownian path
     return W, b
 
+
+def calc_dict_spread(dict):
+    long = pd.Series(dict[0]) - 1
+    short = pd.Series(dict[1]) - 1
+    spread = long - short
+
+    return spread
 
 if __name__ == '__main__':
 

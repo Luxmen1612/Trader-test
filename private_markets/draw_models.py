@@ -66,7 +66,7 @@ class Brownian:  # (buchner 3.3)
 
     def get_optimised_parameters(self):
         """
-        loops through all sub strategies, collects the data and finds the
+        loops through all sub Strategies, collects the data and finds the
         optimised draw_rate,draw_volatility,draw_correlation for the given draws of that strategy
 
         :return: list(draw_rate,draw_volatility,draw_correlation)

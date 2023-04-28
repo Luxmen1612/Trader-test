@@ -28,9 +28,30 @@
 <div class = "container">
 
   <div class = "MajorBox" id = "MajorBox"> </div>
-  <div class = "box">Box A</div>
+  <!--<div class = "box">Box A</div>
   <div class = "box">Box B</div>
-  <div class = "box">Box C</div>
+  <div class = "box">Box C</div> -->
+    <div class = "Portfolio">
+
+        <table>
+            <thead>
+            <tr>
+                {% for item in ptf %}
+                <th> {{ item._raw["symbol"] }} </th>
+                {% endfor %}
+            </tr>
+            </thead>
+            <tbody>
+
+            <tr>
+                {% for item in ptf %}
+                <td> {{ item._raw["market_value"] }} </td>
+                {% endfor %}
+            </tr>
+            </tbody>
+        </table>
+
+    </div>
 
 </div>
 

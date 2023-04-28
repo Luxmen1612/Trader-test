@@ -5,7 +5,7 @@ from mongomodels import MongoClient
 from dotenv import dotenv_values
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 config = dotenv_values(BASE_DIR/ ".env")
 
 mongodb = None
@@ -16,6 +16,7 @@ coll_name = "BankingInfo"
 def init_app():
 
     global mongodb
+
     app = Flask(__name__)
     mongodb = MongoClient(uri, db_name, coll_name)
 

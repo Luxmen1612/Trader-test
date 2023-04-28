@@ -76,7 +76,7 @@ class Brownian:  # buchner
 
     def get_optimised_parameters(self):
         """
-        loops through all sub strategies, collects the data and finds the
+        loops through all sub Strategies, collects the data and finds the
         optimised dist_rate,dist_volatility,dist_correlation for the given dist of that strategy
 
         :return: list(dist_rate,dist_volatility,dist_correlation)

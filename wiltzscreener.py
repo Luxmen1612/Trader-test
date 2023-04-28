@@ -32,8 +32,7 @@ def athome_scrpr():
     page_size = 20
 
     uris = ["https://www.athome.lu/srp/?tr=buy&q=bb769e8c&loc=L4-nord&ptypes=house", "https://www.athome.lu/srp/?tr=buy&q=6cbd09fa&ptypes=house", "https://www.athome.lu/srp/?tr=buy&q=faee1a4a&ptypes=house"]
-    #base_uri = "https://www.athome.lu/srp/?tr=buy&q=6cbd09fa&ptypes=house"
-
+   # uris = ["https://www.athome.lu/srp/?tr=buy&q=faee1a4a&ptypes=house"]
     for u in uris:
         prices = {}
         price_lst = []
@@ -74,15 +73,18 @@ def athome_scrpr():
 
     return prices
 
-def build_index(coll):
+def build_index(coll, data ="prices"):
 
     average_index = {}
 
     for k in pymongo.MongoClient(mongo_uri)[db][coll].find().sort('uploadDate', 1):
-
-        average = np.average(k['data'])
-        median = np.median(k['data'])
-        average_index[k['uploadDate']] = median
+        if data == "price":
+            average = np.average(k['data'])
+            median = np.median(k['data'])
+            average_index[k['uploadDate']] = median
+        else:
+            supply = len(k["data"])
+            average_index[k["uploadDate"]] = supply
 
     series = pd.Series(average_index)
 
@@ -92,4 +94,5 @@ def build_index(coll):
 if __name__ == '__main__':
 
     #athome_scrpr()
-    build_index(coll = "WILTZ")
+    for k in ["WILTZ", "NORD"]:
+        build_index(coll = k, data = "price")
