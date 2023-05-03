@@ -95,4 +95,4 @@ if __name__ == '__main__':
 
     #athome_scrpr()
     for k in ["WILTZ", "NORD"]:
-        build_index(coll = k, data = "price")
+        build_index(coll = k, data = "volume")

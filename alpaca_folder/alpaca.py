@@ -14,6 +14,7 @@ api_key = config['ALPACA_PAPER_KEY']
 api_secret = config['ALPACA_PAPER_SECRET_KEY']
 endpoint = config['ALPACA_ENDPOINT_PAPER']
 
+
 def get_assets(asset_class = None, symbol = None):
 
     """asset class argument includes stocks / crypto, etfs included in stocks"""
@@ -34,6 +35,7 @@ def filter_assets(asset_list, filter = str):
 
     return FilteredList
 
+
 def generate_ticket(symbol, qty, side):
 
     ticket_schema = {
@@ -44,6 +46,7 @@ def generate_ticket(symbol, qty, side):
     }
 
     return ticket_schema
+
 
 def order(ticket):
 

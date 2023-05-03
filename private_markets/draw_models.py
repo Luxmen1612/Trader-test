@@ -29,15 +29,16 @@ class Brownian:  # (buchner 3.3)
         '''
         calculate draw rate for given point in time
         '''
-        average_hp = 12 * 4
+        average_hp = 12 * 12
         observed_hp = self.context.npoints
-        draw_rate = max(1, self.draw_rate * average_hp / observed_hp)
+        #draw_rate = max(1, self.draw_rate * average_hp / observed_hp)
+        #draw_rate = self.draw_rate * average_hp/observed_hp
 
         self.dd_noise = self.draw_corr * self.context.market_noise[k] + \
                         np.sqrt((1 - self.draw_corr ** 2)) * self.e1[k]  # 3.6
 
-        self.draw_dynamics = max(0, (draw_rate + (self.draw_vol * self.dd_noise  # 3.7
-                                                * np.sqrt(k * self.context.dt))))
+        self.draw_dynamics = abs(self.draw_rate + (self.draw_vol * self.dd_noise  # 3.7
+                                                * np.sqrt(k * self.context.dt)))
 
         return self.draw_dynamics
 
