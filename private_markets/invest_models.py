@@ -90,7 +90,7 @@ class PME_Buchner:
         draw_obj = draw_models.Brownian(self.context,0.1, 0.2, 0.5, seed=1)
         invest_obj = PME_Buchner(self.context, self.bm, alpha_vol=alpha_vol,
                          alpha_mu=alpha_mu, beta=beta, seed=3, df=10)
-        simulation_obj = simulation.Simulation(self.context, draw_obj, dist_obj, invest_obj, realized_calls=0, env = "beta_sourcing")
+        simulation_obj = simulation.Simulation(self.context, draw_obj, dist_obj, invest_obj, realized_calls=None, env = "beta_sourcing")
         simulation_obj.simulate_path()
         #
         #target_value = 2.

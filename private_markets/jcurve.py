@@ -10,7 +10,7 @@ import numpy as np
 from dateutil.relativedelta import relativedelta
 #from frqpriips.analytics.priips.helpers import modelutils
 from private_markets import invest_models, draw_models, dist_models, private_debt_model, context, simulation
-from private_markets.toolbox.helpers import allocate
+from private_markets.toolbox.helpers import allocate, built_realized_df
 import yfinance as yf
 import matplotlib.pyplot as plt
 import pymongo
@@ -38,7 +38,10 @@ class Jcurve:
     def __init__(self, bm_data, fund_id):
 
         fund_data = fund_coll.find_one({"fund_id": fund_id})
-        fund_transactions = allocate(transactions_coll.find({"fund_id" : fund_id}))
+        fund_transactions = allocate(transactions_coll.find({"fund_id" : fund_id})).resample("M").sum()
+        fund_valuations = pd.Series(fund_data["valuations"])
+        fund_valuations.index = pd.to_datetime(fund_valuations.index, format = "%Y-%m-%d")
+        fund_valuations = fund_valuations.resample("M").last().ffill()
         self.start_date = fund_data["launch date"] if len(fund_transactions) == 0 else fund_transactions.index[-1]
         self.end_date = fund_data["launch date"]+dt.timedelta(fund_data["duration"]*365)
         self.bm_data = bm_data
@@ -52,12 +55,17 @@ class Jcurve:
         self.navs = []
         self.P = {}
 
-        for i in range(100):
+        self.realized_df, self.combined_df = built_realized_df(self.context, fund_valuations, fund_transactions)
+
+
+        for i in range(2):
             sim_dict = self.simulate(10, i)
             self.navs.append(sim_dict["P"].iloc[-1])
             self.dict[i] = sim_dict
             self.P[i] = sim_dict["P"]
-        test = 1
+
+        self.df = pd.concat([self.combined_df, pd.DataFrame(self.P)])
+
 
     def simulate(self, degrees_freedom, item):
 
@@ -67,7 +75,8 @@ class Jcurve:
                 #seed = item
                 #print(f'running scenario {seed} for process {degrees_freedom}')
                 #scenario_obj = simulation.set_params(bm_data = self.benchmark_data, seed = seed, beta = self.beta, rhp = self.rhp, env = self.env, capital=self.capital, start = )
-                scenario_obj = simulation.set_params(self.context, env = "normal", realized_calls=self.realized_calls)
+                #scenario_obj = simulation.set_params(self.context, env = "normal", realized_calls=self.realized_calls)
+                scenario_obj = simulation.set_params(self.context, env="normal", realized_calls=self.realized_df)
                 scenario_obj.simulate_path()
                 scenarios_dict = scenario_obj.results_df
 
@@ -77,5 +86,7 @@ class Jcurve:
 if __name__ == "__main__":
 
     test = Jcurve(bm_data, 1)
-    plt.plot(pd.DataFrame(test.P))
+    plt.plot(test.realized_df["P"])
+    #plt.plot(pd.DataFrame(test.P), linestyle = "dashed")
+    plt.plot(test.df, linestyle = "dashed")
     plt.show()

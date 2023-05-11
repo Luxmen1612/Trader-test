@@ -416,8 +416,8 @@ if __name__ == '__main__':
     #country_ref()
 
     x = portfolio_backtesting()
-    #x.get_latest_performance()
-    x.run()
+    x.get_latest_performance()
+    #x.run()
     #x.get_spread()
     #x.stats()
     #x.out_of_sample()
