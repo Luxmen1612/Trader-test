@@ -84,6 +84,7 @@ def retention_rate(data, date, previous_date):
 
     return retention
 
+
 def _Brownian(N, T=1, seed = np.random.randint(10**9)):
     np.random.seed(seed)
     dt = T / N  # time step
