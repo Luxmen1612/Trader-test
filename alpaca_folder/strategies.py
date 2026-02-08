@@ -25,7 +25,7 @@ coll = "L/S"
 lookback = 20
 asset_list = get_assets(asset_class="us_equity")
 symbol_list = pd.read_excel(BASE_DIR/"test.xlsx", engine = "openpyxl")[0]
-nsdq_tickers = pd.read_excel(BASE_DIR/"NSDQ.xlsx", engine = "openpyxl", header = None)[0]
+#nsdq_tickers = pd.read_excel(BASE_DIR/"NSDQ.xlsx", engine = "openpyxl", header = None)[0]
 nsdq_10_tickers = ["AAPL", "MSFT", "AMZN", "GOOG", "NVDA", "TSLA", "PEP", "COST", "META"]
 
 def calc_nav():

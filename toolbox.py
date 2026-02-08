@@ -100,6 +100,23 @@ def calc_dict_spread(dict):
 
     return spread
 
+### Scipy optimization ###
+
+def model(params, X):
+    # here you need to implement your real model
+    # for Predicted_Installation
+    alpha = params[0]
+    beta = params[1]
+    y_pred = alpha + (beta * X)
+    return y_pred
+
+def sum_of_squares(params, X, Y):
+
+    y_pred = model(params, X)
+    obj = np.sqrt(((y_pred - Y) ** 2).sum())
+    return obj
+
+
 if __name__ == '__main__':
 
     #symbols = ['BATS.L', '^GSPC', 'BATS.L', '^GSPC', 'BATS.L', '^GSPC', 'BATS.L', '^GSPC', 'BATS.L', '^GSPC', 'BATS.L', '^GSPC',]
