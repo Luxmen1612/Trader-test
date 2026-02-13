@@ -1,0 +1,4 @@
+yfinance==0.2.65
+pandas==2.2.3
+sentence-transformers
+matplotlib
