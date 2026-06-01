@@ -25,11 +25,11 @@ class MomentumBenchmark:
         for i in self.quarterly_dates:
             print(i)
             if list(self.quarterly_dates).index(i) != 0:
-                self.tickers[i] = self.get_ls_tickers(self.returns[i - datetime.timedelta(30): i], size = 100)  ##### This gives me the portfolio of long and short tickers
+                self.tickers[i] = self.get_ls_tickers(self.returns[i - datetime.timedelta(30): i], size = 250)  ##### This gives me the portfolio of long and short tickers
 
         for k,v in self.tickers.items():
             if k != self.quarterly_dates[-1]:
-                X = self.get_portfolio_value(k,v, volume_data)
+                self.get_portfolio_value(k, v, volume_data)
 
         X = pd.DataFrame.from_dict(self.X).transpose()
         X['state reset'] = (X['state'] == 0).cumsum()
@@ -40,7 +40,6 @@ class MomentumBenchmark:
 
     def get_portfolio_value(self, k,v, volume_data):
 
-        X = {} ##explanatory variables
         #if list(self.quarterly_dates).index(k) < len(self.quarterly_dates)-1:
         k_idx = list(self.quarterly_dates).index(k)
         next_idx = k_idx + 1
@@ -57,8 +56,6 @@ class MomentumBenchmark:
                     #"liquidity_spread":self.prices[(self.tickers[k[0]]].Volume.loc[k:next_date].dropna().mean(axis = 1) - self.prices[self.tickers[k[1]]].Volume.loc[k:next_date].dropna().mean(axis = 1),
                     "momentum_liquidity": volume_data[self.tickers[k][0].index].loc[k:next_date].dropna().sum(axis = 1).sum(),
                     "state":1 if long_portfolio.sum() > short_portfolio.sum() else 0}
-
-        return X
 
 
     def get_ls_tickers(self, data, size):
